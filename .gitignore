@@ -1,3 +1,7 @@
+# my changes
+*.kdev4
+/kdev4/
+
 !src/chkjson
 *.7z
 *.a
