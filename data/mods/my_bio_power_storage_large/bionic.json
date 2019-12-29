@@ -1,0 +1,21 @@
+[
+  {
+    "id": "bio_power_storage_large",
+    "type": "bionic",
+    "name": "Power Storage Mk. V",
+    "capacity": "1000 kJ",
+    "description": "Adds 10 MJ."
+  },
+  {
+    "id": "bio_power_storage_large",
+    "copy-from": "bionic_general",
+    "type": "BIONIC_ITEM",
+    "name": "Power Storage CBM Mk. V",
+    "name_plural": "Power Storage CBM Mk. V",
+    "looks_like": "bio_int_enhancer",
+    "description": "Increases the user's power capacity by 10 MJ",
+    "price": 40000000,
+    "weight": "50 g",
+    "difficulty": 1
+  }
+]

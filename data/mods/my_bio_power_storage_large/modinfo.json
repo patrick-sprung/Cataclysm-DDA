@@ -1,0 +1,11 @@
+[
+  {
+    "type": "MOD_INFO",
+    "ident": "add_bio_power_storage_large",
+    "name": "Large Power Storage CBM",
+    "authors": [ "me" ],
+    "description": "Adds 10 MJ Power Storage CBM.",
+    "category": "rebalance",
+    "dependencies": [ "dda" ]
+  }
+]
