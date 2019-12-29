@@ -1303,6 +1303,20 @@ void Character::process_bionic( int b )
         // Aftershock
         add_morale( MORALE_FEELING_GOOD, 20, 20, 30_minutes, 20_minutes, true );
     }
+    // my bionics here
+    else if( bio.id == "bio_no_sleep" ) {
+        int fatigue = get_fatigue();
+        if( fatigue > 0 ) {
+            // do a little extra
+            fatigue += 20;
+            // remove n fatigue at cost of n J
+            units::energy cost = fatigue * 1_J;
+            if( get_power_level() >= cost ) {
+                mod_fatigue( -fatigue );
+                mod_power_level( -cost );
+            }
+        }
+    }
 }
 
 void player::bionics_uninstall_failure( int difficulty, int success, float adjusted_skill )

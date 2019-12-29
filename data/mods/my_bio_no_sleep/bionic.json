@@ -1,0 +1,22 @@
+[
+  {
+    "id": "bio_no_sleep",
+    "type": "bionic",
+    "name": "Sleep Eliminator CBM",
+    "description": "...",
+    "active": true,
+    "flags": [ "BIONIC_SLEEP_FRIENDLY", "BIONIC_TOGGLED" ]
+  },
+  {
+    "id": "bio_no_sleep",
+    "copy-from": "bionic_general",
+    "type": "BIONIC_ITEM",
+    "name": "Sleep Eliminator CBM",
+    "name_plural": "Sleep Eliminator CBM",
+    "looks_like": "bio_int_enhancer",
+    "description": "No bed time for you.",
+    "price": 40000000,
+    "weight": "50 g",
+    "difficulty": 1
+  }
+]

@@ -1,0 +1,11 @@
+[
+  {
+    "type": "MOD_INFO",
+    "ident": "add_bio_no_sleep",
+    "name": "Sleep eliminator CBM",
+    "authors": [ "me" ],
+    "description": "...",
+    "category": "rebalance",
+    "dependencies": [ "dda" ]
+  }
+]
