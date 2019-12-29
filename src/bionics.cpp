@@ -125,6 +125,11 @@ std::map<bionic_id, bionic_data> bionics;
 std::vector<bionic_id> faulty_bionics;
 } //namespace
 
+std::map<bionic_id, bionic_data> &get_bionics_map()
+{
+    return bionics;
+}
+
 /** @relates string_id */
 template<>
 bool string_id<bionic_data>::is_valid() const

@@ -1,0 +1,11 @@
+[
+  {
+    "type": "MOD_INFO",
+    "ident": "add_character_creation_bionics_tab",
+    "name": "Bionics Tab for character creation",
+    "authors": [ "me" ],
+    "description": "...",
+    "category": "misc",
+    "dependencies": [ "dda" ]
+  }
+]

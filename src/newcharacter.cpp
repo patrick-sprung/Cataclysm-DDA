@@ -80,7 +80,7 @@
 #define HIGH_STAT 14 // The point after which stats cost double
 #define MAX_STAT 20 // The point after which stats can not be increased further
 
-#define NEWCHAR_TAB_MAX 6 // The ID of the rightmost tab
+#define NEWCHAR_TAB_MAX 7 // The ID of the rightmost tab
 
 static int skill_increment_cost( const Character &u, const skill_id &skill );
 
@@ -101,6 +101,7 @@ tab_direction set_profession( const catacurses::window &w, avatar &u, points_lef
 tab_direction set_skills( const catacurses::window &w, avatar &u, points_left &points );
 tab_direction set_description( const catacurses::window &w, avatar &you, bool allow_reroll,
                                points_left &points );
+tab_direction set_bionics( const catacurses::window &w, avatar &you, points_left &points );
 
 static cata::optional<std::string> query_for_template_name();
 void reset_scenario( avatar &u, const scenario *scen );
@@ -414,7 +415,7 @@ bool avatar::create( character_type type, const std::string &tempname )
         wrefresh( w );
 
         if( points.limit == points_left::TRANSFER ) {
-            tab = 6;
+            tab = 7;
         }
 
         switch( tab ) {
@@ -428,15 +429,18 @@ bool avatar::create( character_type type, const std::string &tempname )
                 result = set_profession( w, *this, points, result );
                 break;
             case 3:
-                result = set_stats( w, *this, points );
+                result = set_bionics( w, *this, points );
                 break;
             case 4:
-                result = set_traits( w, *this, points );
+                result = set_stats( w, *this, points );
                 break;
             case 5:
-                result = set_skills( w, *this, points );
+                result = set_traits( w, *this, points );
                 break;
             case 6:
+                result = set_skills( w, *this, points );
+                break;
+            case 7:
                 result = set_description( w, *this, allow_reroll, points );
                 break;
         }
@@ -596,6 +600,7 @@ static void draw_character_tabs( const catacurses::window &w, const std::string 
         _( "POINTS" ),
         _( "SCENARIO" ),
         _( "PROFESSION" ),
+        _( "BIONICS" ),
         _( "STATS" ),
         _( "TRAITS" ),
         _( "SKILLS" ),
@@ -1534,6 +1539,9 @@ tab_direction set_profession( const catacurses::window &w, avatar &u, points_lef
             for( const trait_id &old_trait : u.prof->get_locked_traits() ) {
                 u.toggle_trait( old_trait );
             }
+            // reset bionics of old profession
+            u.prof->reset_CBMs();
+
             u.prof = &sorted_profs[cur_id].obj();
             // Add traits for the new profession (and perhaps scenario, if, for example,
             // both the scenario and old profession require the same trait)
@@ -2430,6 +2438,237 @@ tab_direction set_description( const catacurses::window &w, avatar &you, const b
                 wrap.append( ctxt.get_raw_input().text );
                 you.name = wrap.str();
             }
+        } else if( action == "QUIT" && query_yn( _( "Return to main menu?" ) ) ) {
+            return tab_direction::QUIT;
+        }
+    } while( true );
+}
+
+tab_direction set_bionics( const catacurses::window &w, avatar &you, points_left &points )
+{
+    draw_character_tabs( w, _( "BIONICS" ) );
+
+    const int iContentHeight = TERMY - 6;
+    /*catacurses::window w_description = catacurses::newwin( iContentHeight, TERMX - 35,
+                                       point( 31 + getbegx( w ), 5 + getbegy( w ) ) );
+    */
+
+    // map mapping bionic_id to bionic_data
+    auto bionics_map = get_bionics_map();
+
+    // list of sorted bionics
+    std::vector<bionic_id> sorted_bionics;
+    for( auto it = bionics_map.begin(), end = bionics_map.end(); it != end; ++it ) {
+        sorted_bionics.push_back( it->first );
+    }
+    std::sort( sorted_bionics.begin(), sorted_bionics.end(), [&bionics_map]( const bionic_id & a,
+    const bionic_id & b ) {
+        return bionics_map[a].name.translated() < bionics_map[b].name.translated();
+    } );
+
+    // bionic counts from profession
+    std::unordered_map<bionic_id, unsigned> count_map;
+    for( auto &id : you.prof->CBMs() ) {
+        if( count_map.find( id ) == count_map.end() ) {
+            count_map[id] = 1;
+        } else {
+            count_map[id] += 1;
+        }
+    }
+
+    const int num_bionics = sorted_bionics.size();
+    int cur_offset = 0;
+    int cur_pos = 0;
+    bionic_id current_bionic = sorted_bionics[cur_pos];
+    //int selected = 0;
+
+    input_context ctxt( "NEW_CHAR_BIONICS" );
+    ctxt.register_cardinal();
+    /*ctxt.register_action( "SCROLL_DOWN" );
+    ctxt.register_action( "SCROLL_UP" );*/
+    ctxt.register_action( "PREV_TAB" );
+    ctxt.register_action( "NEXT_TAB" );
+    ctxt.register_action( "QUIT" );
+
+    /*
+    std::map<skill_id, int> prof_skills;
+    const auto &pskills = u.prof->skills();
+
+    std::copy( pskills.begin(), pskills.end(),
+               std::inserter( prof_skills, prof_skills.begin() ) );
+    */
+
+    do {
+        draw_points( w, points );
+        /*
+        // Clear the bottom of the screen.
+        werase( w_description );
+        mvwprintz( w, point( 31, 3 ), c_light_gray, std::string( getmaxx( w ) - 32, ' ' ) );
+
+        // Write the hint as to upgrade costs
+        const int cost = skill_increment_cost( u, currentSkill->ident() );
+        const int level = u.get_skill_level( currentSkill->ident() );
+        const int upgrade_levels = level == 0 ? 2 : 1;
+        // We have two different strings to pluralize, so we have to use two
+        // translation calls.
+        const std::string upgrade_levels_s = string_format(
+                //~ levels here are skill levels at character creation time
+                ngettext( "%d level", "%d levels", upgrade_levels ), upgrade_levels );
+        const nc_color color = points.skill_points_left() >= cost ? COL_SKILL_USED : c_light_red;
+        mvwprintz( w, point( 31, 3 ), color,
+                   //~ Second string is e.g. "1 level" or "2 levels"
+                   ngettext( "Upgrading %s by %s costs %d point",
+                             "Upgrading %s by %s costs %d points", cost ),
+                   currentSkill->name(), upgrade_levels_s, cost );
+
+        // We want recipes from profession skills displayed, but without boosting the skills
+        // Copy the skills, and boost the copy
+        SkillLevelMap with_prof_skills = u.get_all_skills();
+        for( const auto &sk : prof_skills ) {
+            with_prof_skills.mod_skill_level( sk.first, sk.second );
+        }
+
+        std::map<std::string, std::vector<std::pair<std::string, int> > > recipes;
+        for( const auto &e : recipe_dict ) {
+            const auto &r = e.second;
+            //Find out if the current skill and its level is in the requirement list
+            auto req_skill = r.required_skills.find( currentSkill->ident() );
+            int skill = req_skill != r.required_skills.end() ? req_skill->second : 0;
+            bool would_autolearn_recipe =
+                recipe_dict.all_autolearn().count( &r ) &&
+                with_prof_skills.meets_skill_requirements( r.autolearn_requirements );
+
+            if( !would_autolearn_recipe && !r.never_learn &&
+                ( r.skill_used == currentSkill->ident() || skill > 0 ) &&
+                with_prof_skills.has_recipe_requirements( r ) )  {
+
+                recipes[r.skill_used->name()].emplace_back(
+                    r.result_name(),
+                    ( skill > 0 ) ? skill : r.difficulty
+                );
+            }
+        }
+
+        std::string rec_disp;
+
+        for( auto &elem : recipes ) {
+            std::sort( elem.second.begin(), elem.second.end(),
+                       []( const std::pair<std::string, int> &lhs,
+            const std::pair<std::string, int> &rhs ) {
+                return lhs.second < rhs.second ||
+                       ( lhs.second == rhs.second && lhs.first < rhs.first );
+            } );
+
+            const std::string rec_temp = enumerate_as_string( elem.second.begin(), elem.second.end(),
+            []( const std::pair<std::string, int> &rec ) {
+                return string_format( "%s (%d)", rec.first, rec.second );
+            } );
+
+            if( elem.first == currentSkill->name() ) {
+                rec_disp = "\n\n" + colorize( rec_temp, c_brown ) + rec_disp;
+            } else {
+                rec_disp += "\n\n" + colorize( "[" + elem.first + "]\n" + rec_temp, c_light_gray );
+            }
+        }
+
+        rec_disp = currentSkill->description() + rec_disp;
+
+        const auto vFolded = foldstring( rec_disp, getmaxx( w_description ) );
+        int iLines = vFolded.size();
+
+        if( selected < 0 ) {
+            selected = 0;
+        } else if( iLines < iContentHeight ) {
+            selected = 0;
+        } else if( selected >= iLines - iContentHeight ) {
+            selected = iLines - iContentHeight;
+        }
+
+        fold_and_print_from( w_description, point_zero, getmaxx( w_description ),
+                             selected, COL_SKILL_USED, rec_disp );
+        */
+        /*
+        draw_scrollbar( w, selected, iContentHeight, iLines,
+                        point( getmaxx( w ) - 1, 5 ), BORDER_COLOR, true );
+        */
+
+        calcStartPos( cur_offset, cur_pos, iContentHeight, num_bionics );
+        for( int i = cur_offset; i < num_bionics && i - cur_offset < iContentHeight; ++i ) {
+            const int y = 5 + i - cur_offset;
+            const bionic_id id = sorted_bionics[i];
+            // Clear the line
+            mvwprintz( w, point( 2, y ), c_light_gray, std::string( getmaxx( w ) - 3, ' ' ) );
+
+            if( count_map.find( id ) == count_map.end() ) {
+                mvwprintz( w, point( 2, y ),
+                           ( i == cur_pos ? h_light_gray : c_light_gray ), bionics_map[id].name.translated() );
+            } else {
+                mvwprintz( w, point( 2, y ),
+                           ( i == cur_pos ? hilite( COL_SKILL_USED ) : COL_SKILL_USED ),
+                           bionics_map[id].name.translated() );
+                wprintz( w, ( i == cur_pos ? hilite( COL_SKILL_USED ) : COL_SKILL_USED ),
+                         " ( %d )", count_map[id] );
+            }
+            /*
+            if( u.get_skill_level( thisSkill->ident() ) == 0 ) {
+                mvwprintz( w, point( 2, y ),
+                           ( i == cur_pos ? h_light_gray : c_light_gray ), thisSkill->name() );
+            } else {
+                mvwprintz( w, point( 2, y ),
+                           ( i == cur_pos ? hilite( COL_SKILL_USED ) : COL_SKILL_USED ),
+                           thisSkill->name() );
+                wprintz( w, ( i == cur_pos ? hilite( COL_SKILL_USED ) : COL_SKILL_USED ),
+                         " ( %d )", u.get_skill_level( thisSkill->ident() ) );
+            }
+
+            for( auto &prof_skill : u.prof->skills() ) {
+                if( prof_skill.first == thisSkill->ident() ) {
+                    wprintz( w, ( i == cur_pos ? h_white : c_white ), " (+%d)",
+                             static_cast<int>( prof_skill.second ) );
+                    break;
+                }
+            }*/
+        }
+
+        draw_scrollbar( w, cur_pos, iContentHeight, num_bionics, point( 0, 5 ) );
+
+        wrefresh( w );
+        //wrefresh( w_description );
+        const std::string action = ctxt.handle_input();
+        if( action == "DOWN" ) {
+            cur_pos++;
+            if( cur_pos >= num_bionics ) {
+                cur_pos = 0;
+            }
+            current_bionic = sorted_bionics[cur_pos];
+        } else if( action == "UP" ) {
+            cur_pos--;
+            if( cur_pos < 0 ) {
+                cur_pos = num_bionics - 1;
+            }
+            current_bionic = sorted_bionics[cur_pos];
+        } else if( action == "LEFT" ) {
+            if( count_map.find( current_bionic ) != count_map.end() ) {
+                count_map[current_bionic] -= 1;
+                if( count_map[current_bionic] == 0 ) {
+                    count_map.erase( current_bionic );
+                }
+                you.prof->remove_CBM( current_bionic );
+            }
+        } else if( action == "RIGHT" ) {
+            if( count_map.find( current_bionic ) == count_map.end() ) {
+                count_map[current_bionic] = 0;
+            }
+            count_map[current_bionic] += 1;
+            you.prof->add_CBM( current_bionic );
+            /*} else if( action == "SCROLL_DOWN" ) {
+                selected++;
+            } else if( action == "SCROLL_UP" ) {
+                selected--;*/
+        } else if( action == "PREV_TAB" ) {
+            return tab_direction::BACKWARD;
+        } else if( action == "NEXT_TAB" ) {
+            return tab_direction::FORWARD;
         } else if( action == "QUIT" && query_yn( _( "Return to main menu?" ) ) ) {
             return tab_direction::QUIT;
         }

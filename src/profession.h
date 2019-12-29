@@ -67,6 +67,7 @@ class profession
 
         std::vector<addiction> _starting_addictions;
         std::vector<bionic_id> _starting_CBMs;
+        mutable std::vector<bionic_id> _all_CBMs; // for character creation, bionics tab
         std::vector<trait_id> _starting_traits;
         std::vector<mtype_id> _starting_pets;
         // the int is what level the spell starts at
@@ -105,6 +106,9 @@ class profession
         std::vector<addiction> addictions() const;
         std::vector<mtype_id> pets() const;
         std::vector<bionic_id> CBMs() const;
+        void add_CBM( bionic_id id ) const; // for character creation, bionics tab
+        void remove_CBM( bionic_id id ) const; // for character creation, bionics tab
+        void reset_CBMs() const; // for character creation, bionics tab
         StartingSkillList skills() const;
 
         std::map<spell_id, int> spells() const;

@@ -200,4 +200,6 @@ std::string list_occupied_bps( const bionic_id &bio_id, const std::string &intro
 
 int bionic_manip_cos( float adjusted_skill, bool autodoc, int bionic_difficulty );
 
+std::map<bionic_id, bionic_data> &get_bionics_map();
+
 #endif

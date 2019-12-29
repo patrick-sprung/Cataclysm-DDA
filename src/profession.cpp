@@ -218,6 +218,7 @@ void profession::load( const JsonObject &jo, const std::string & )
     optional( jo, was_loaded, "addictions", _starting_addictions, addiction_reader {} );
     // TODO: use string_id<bionic_type> or so
     optional( jo, was_loaded, "CBMs", _starting_CBMs, auto_flags_reader<bionic_id> {} );
+    reset_CBMs();
     // TODO: use string_id<mutation_branch> or so
     optional( jo, was_loaded, "traits", _starting_traits, auto_flags_reader<trait_id> {} );
     optional( jo, was_loaded, "flags", flags, auto_flags_reader<> {} );
@@ -286,7 +287,7 @@ void profession::check_definition() const
         debugmsg( "_starting_items_female group is undefined" );
     }
 
-    for( const auto &a : _starting_CBMs ) {
+    for( const auto &a : _all_CBMs ) {
         if( !a.is_valid() ) {
             debugmsg( "bionic %s for profession %s does not exist", a.c_str(), id.c_str() );
         }
@@ -424,7 +425,25 @@ std::vector<addiction> profession::addictions() const
 
 std::vector<bionic_id> profession::CBMs() const
 {
-    return _starting_CBMs;
+    return _all_CBMs;
+}
+
+void profession::add_CBM( bionic_id id ) const
+{
+    _all_CBMs.push_back( id );
+}
+
+void profession::remove_CBM( bionic_id id ) const
+{
+    auto it = std::find( _all_CBMs.begin(), _all_CBMs.end(), id );
+    if( it != _all_CBMs.end() ) {
+        _all_CBMs.erase( it );
+    }
+}
+
+void profession::reset_CBMs() const
+{
+    _all_CBMs = _starting_CBMs;
 }
 
 std::vector<trait_id> profession::get_locked_traits() const
