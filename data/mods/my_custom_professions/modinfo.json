@@ -1,0 +1,11 @@
+[
+  {
+    "type": "MOD_INFO",
+    "ident": "add_my_custom_professions",
+    "name": "My Custom Professions",
+    "authors": [ "me" ],
+    "description": "...",
+    "category": "rebalance",
+    "dependencies": [ "dda" ]
+  }
+]

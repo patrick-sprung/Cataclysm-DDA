@@ -1,0 +1,29 @@
+[
+  {
+    "type": "profession",
+    "ident": "bionic_test",
+    "name": "Test Bionics",
+    "description": "...",
+    "points": 0,
+    "CBMs": [ "bio_tools", "bio_metabolics", "bio_power_storage_large", "bio_no_sleep" ],
+    "items": {
+      "both": {
+        "items": [
+          "jeans",
+          "longshirt",
+          "socks",
+          "coat_winter",
+          "boots_winter",
+          "knit_scarf",
+          "pockknife",
+          "water_clean",
+          "matches",
+          "wristwatch"
+        ],
+        "entries": [ { "group": "charged_cell_phone" } ]
+      },
+      "male": [ "boxer_shorts" ],
+      "female": [ "bra", "panties" ]
+    }
+  }
+]
