@@ -1307,10 +1307,8 @@ void Character::process_bionic( int b )
     else if( bio.id == "bio_no_sleep" ) {
         int fatigue = get_fatigue();
         if( fatigue > 0 ) {
-            // do a little extra
-            fatigue += 20;
-            // remove n fatigue at cost of n J
-            units::energy cost = fatigue * 1_J;
+            // remove n fatigue at cost of 4n J
+            units::energy cost = fatigue * 4_J;
             if( get_power_level() >= cost ) {
                 mod_fatigue( -fatigue );
                 mod_power_level( -cost );
@@ -2166,7 +2164,7 @@ void player::add_bionic( const bionic_id &b )
 
     units::energy pow_up = bionics[b].capacity;
     mod_max_power_level( pow_up );
-    if( b == "bio_power_storage" || b == "bio_power_storage_mkII" ) {
+    if( b == "bio_power_storage" || b == "bio_power_storage_mkII" || b == "bio_power_storage_large" ) {
         add_msg_if_player( m_good, _( "Increased storage capacity by %i." ),
                            units::to_kilojoule( pow_up ) );
         // Power Storage CBMs are not real bionic units, so return without adding it to my_bionics
